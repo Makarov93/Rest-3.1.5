@@ -16,9 +16,14 @@ public class UserController {
         this.userService = userService;
     }
 
-    @GetMapping("/login")
-    public String showLoginPage() {
-        return "/login";
+    @GetMapping("/")
+    public String getLoginPage() {
+        return "redirect:/login";
+    }
+
+    @GetMapping("/admin")
+    public String getAdminPage() {
+        return "/admin";
     }
 
     @GetMapping(value = "/user")
@@ -28,8 +33,10 @@ public class UserController {
         return "/user";
     }
 
-    @GetMapping(value = "/")
-    public String getLoginPage() {
-        return "redirect:/login";
+    @GetMapping("/login")
+    public String loginPage() {
+        return "login";
     }
 }
+
+

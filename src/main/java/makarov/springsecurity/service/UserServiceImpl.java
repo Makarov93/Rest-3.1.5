@@ -1,12 +1,12 @@
 package makarov.springsecurity.service;
 
+
+import makarov.springsecurity.dao.RoleRepository;
+import makarov.springsecurity.dao.UserRepository;
+import makarov.springsecurity.dto.UserDTO;
 import makarov.springsecurity.model.Role;
 import makarov.springsecurity.model.User;
-import makarov.springsecurity.repository.RoleRepository;
-import makarov.springsecurity.repository.UserRepository;
 import org.springframework.context.annotation.Lazy;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,8 +47,8 @@ public class UserServiceImpl implements UserService {
         Role adminRole = new Role("ADMIN");
         Role userRole = new Role("USER");
 
-        User user = new User("admin", "admin", (byte) 35, "admin@mail.com", "admin", Set.of(adminRole,userRole));
-        User admin = new User("user", "user", (byte) 30, "user@mail.com", "user", Set.of(userRole));
+        User user = new User(null, "admin", "admin", (byte) 35, "admin@mail.com", "admin", Set.of(adminRole, userRole));
+        User admin = new User(null, "user", "user", (byte) 30, "user@mail.com", "user", Set.of(userRole));
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         admin.setPassword(passwordEncoder.encode(admin.getPassword()));
 
@@ -57,19 +57,29 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public List<User> getUsers(int count) {
+    public List<User> getAllUsers() {
         return userRepository.findAll();
     }
 
     @Override
     @Transactional
-    public void saveUser(User user, Set<String> roles) {
-        if (roles == null) {
+    public void saveOrUpdateUser(UserDTO userDTO) {
+        User user;
+        if (userDTO.getId() == null) {
+            user = new User();
+        } else {
+            user = userRepository.findById(userDTO.getId()).orElseThrow(() -> new RuntimeException("User not found"));
+        }
+        user.setName(userDTO.getName());
+        user.setSurname(userDTO.getSurname());
+        user.setAge(userDTO.getAge());
+        user.setEmail(userDTO.getEmail());
+        user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
+        if (userDTO.getRoles() == null) {
             user.setRoles(roleRepository.findAllByName("USER"));
         } else {
-            user.setRoles(roleRepository.findAllByNameIn(roles));
+            user.setRoles(roleRepository.findAllByNameIn(userDTO.getRoles()));
         }
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
         userRepository.save(user);
     }
 
@@ -84,8 +94,4 @@ public class UserServiceImpl implements UserService {
         return userRepository.findById(id).get();
     }
 
-    @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        return null;
-    }
 }

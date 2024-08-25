@@ -1,51 +1,66 @@
 package makarov.springsecurity.controller;
 
+
+import makarov.springsecurity.dao.RoleRepository;
+import makarov.springsecurity.dto.UserDTO;
+import makarov.springsecurity.model.Role;
 import makarov.springsecurity.model.User;
 import makarov.springsecurity.service.UserService;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.ModelMap;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
-@Controller
+@RestController
+@RequestMapping("/api")
 public class AdminController {
     private final UserService userService;
+    private final RoleRepository roleRepository;
 
-    public AdminController(UserService userService) {
+    public AdminController(UserService userService, RoleRepository roleRepository) {
         this.userService = userService;
+        this.roleRepository = roleRepository;
+
     }
 
-    @GetMapping(value = "/admin")
-    public String getAdminPage(ModelMap model,
-                               @RequestParam(value = "count", required = false, defaultValue = "100") Integer count,
-                               Principal principal) {
-        model.addAttribute("users", userService.getUsers(count));
-        model.addAttribute("user", userService.findByEmail(principal.getName()));
-        model.addAttribute("roles", userService.getAllRolesNames());
-
-        return "/admin";
+    @GetMapping("/users")
+    public List<User> getAllUsers() {
+        return new ArrayList<>(userService.getAllUsers());
     }
 
-    @PostMapping("/admin/newUser")
-    public String createNewUser(@ModelAttribute("user") User user,
-                                @RequestParam(name = "selectedRoles", required = false) Set<String> selectedRoles) {
-        userService.saveUser(user, selectedRoles);
-        return "redirect:/admin";
+    @GetMapping("/users/roles")
+    public ResponseEntity<Collection<Role>> getAllRoles() {
+        return new ResponseEntity<>(roleRepository.findAll(), HttpStatus.OK);
     }
 
-    @PatchMapping(value = "/users")
-    public String updateUser(@ModelAttribute("user") User user,
-                             @RequestParam(name = "selectedRoles", required = false) Set<String> selectedRoles) {
-        userService.saveUser(user, selectedRoles);
-        return "redirect:/admin";
+    @GetMapping("/users/{id}")
+    public User getUserById(@PathVariable long id) {
+        return userService.getUserById(id);
     }
 
-    //
-    @DeleteMapping("/users")
-    public String deleteUser(@RequestParam(value = "id", required = false) Long id) {
+    @PostMapping("/users")
+    public UserDTO addNewUser(@RequestBody UserDTO userDTO) {
+        userService.saveOrUpdateUser(userDTO);
+        return userDTO;
+    }
+
+    @PutMapping("/users")
+    public UserDTO editUser(@RequestBody UserDTO userDTO) {
+        userService.saveOrUpdateUser(userDTO);
+        return userDTO;
+    }
+
+    @DeleteMapping("/users/{id}")
+    public void deleteUser(@PathVariable long id) {
         userService.deleteUser(id);
-        return "redirect:/admin";
+    }
+
+    @GetMapping("/users/currentUser")
+    public User getCurrentUser(Principal principal) {
+        return userService.findByEmail(principal.getName());
     }
 }
