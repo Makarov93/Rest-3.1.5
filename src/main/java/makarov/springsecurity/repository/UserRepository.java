@@ -1,4 +1,4 @@
-package makarov.springsecurity.dao;
+package makarov.springsecurity.repository;
 
 import makarov.springsecurity.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;

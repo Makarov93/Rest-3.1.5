@@ -1,15 +1,15 @@
 package makarov.springsecurity.service;
 
-import makarov.springsecurity.dto.UserDTO;
 import makarov.springsecurity.model.User;
+import org.springframework.security.core.userdetails.UserDetailsService;
 
 import java.util.List;
 import java.util.Set;
 
-public interface UserService {
+public interface UserService extends UserDetailsService {
     List<User> getAllUsers();
 
-    void saveOrUpdateUser(UserDTO userDTO);
+    void saveOrUpdateUser(User user);
 
     void deleteUser(Long id);
 

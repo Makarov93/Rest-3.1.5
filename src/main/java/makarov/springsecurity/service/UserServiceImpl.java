@@ -1,16 +1,19 @@
 package makarov.springsecurity.service;
 
-
-import makarov.springsecurity.dao.RoleRepository;
-import makarov.springsecurity.dao.UserRepository;
-import makarov.springsecurity.dto.UserDTO;
+import makarov.springsecurity.repository.RoleRepository;
+import makarov.springsecurity.repository.UserRepository;
 import makarov.springsecurity.model.Role;
 import makarov.springsecurity.model.User;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -32,6 +35,17 @@ public class UserServiceImpl implements UserService {
         return userRepository.findByEmail(email);
     }
 
+    @Transactional
+    @Override
+    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        User user = userRepository.findByEmail(email);
+        if (user == null) {
+            throw new UsernameNotFoundException(String.format("There is no %s user", email));
+        }
+        return new org.springframework.security.core.userdetails.User(
+                user.getEmail(), user.getPassword(), mapRolesToAuthority(user.getRoles()));
+    }
+
     @Override
     public Set<String> getAllRolesNames() {
         return roleRepository
@@ -39,6 +53,13 @@ public class UserServiceImpl implements UserService {
                 .stream()
                 .map(Role::getName)
                 .collect(Collectors.toSet());
+    }
+
+    private Collection<? extends GrantedAuthority> mapRolesToAuthority(Set<Role> roles) {
+        return roles
+                .stream()
+                .map(role -> new SimpleGrantedAuthority("ROLE_" + role.getName()))
+                .collect(Collectors.toList());
     }
 
     @Transactional
@@ -63,22 +84,15 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public void saveOrUpdateUser(UserDTO userDTO) {
-        User user;
-        if (userDTO.getId() == null) {
-            user = new User();
-        } else {
-            user = userRepository.findById(userDTO.getId()).orElseThrow(() -> new RuntimeException("User not found"));
+    public void saveOrUpdateUser(User user) {
+        if (user.getId() != null && !userRepository.existsById(user.getId())) {
+            throw new RuntimeException("User not found");
         }
-        user.setName(userDTO.getName());
-        user.setSurname(userDTO.getSurname());
-        user.setAge(userDTO.getAge());
-        user.setEmail(userDTO.getEmail());
-        user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
-        if (userDTO.getRoles() == null) {
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        if (user.getRoles() == null) {
             user.setRoles(roleRepository.findAllByName("USER"));
         } else {
-            user.setRoles(roleRepository.findAllByNameIn(userDTO.getRoles()));
+            user.setRoles(roleRepository.findAllByNameIn(user.getRoles().stream().map(Role::getName).collect(Collectors.toSet())));
         }
         userRepository.save(user);
     }
@@ -91,7 +105,6 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User getUserById(Long id) {
-        return userRepository.findById(id).get();
+        return userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
     }
-
 }

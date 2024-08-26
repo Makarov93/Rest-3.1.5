@@ -1,6 +1,5 @@
 package makarov.springsecurity.config;
 
-import makarov.springsecurity.security.UserDetailsServiceSecurity;
 import makarov.springsecurity.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -17,14 +16,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     private final SuccessUserHandler successUserHandler;
     private final UserService userService;
-    private final UserDetailsServiceSecurity userDetailsServiceSecurity;
+
 
     @Autowired
-    public WebSecurityConfig(SuccessUserHandler successUserHandler, UserService userService, UserDetailsServiceSecurity userDetailsServiceSecurity) {
+    public WebSecurityConfig(SuccessUserHandler successUserHandler, UserService userService) {
         this.successUserHandler = successUserHandler;
         this.userService = userService;
 
-        this.userDetailsServiceSecurity = userDetailsServiceSecurity;
     }
 
     @Override
@@ -57,7 +55,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     public DaoAuthenticationProvider daoAuthenticationProvider() {
         DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider();
         authenticationProvider.setPasswordEncoder(passwordEncoder());
-        authenticationProvider.setUserDetailsService(userDetailsServiceSecurity);
+        authenticationProvider.setUserDetailsService(userService);
         return authenticationProvider;
     }
 }

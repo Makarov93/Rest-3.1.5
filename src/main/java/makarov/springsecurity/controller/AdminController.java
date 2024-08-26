@@ -1,10 +1,8 @@
 package makarov.springsecurity.controller;
 
-
-import makarov.springsecurity.dao.RoleRepository;
-import makarov.springsecurity.dto.UserDTO;
 import makarov.springsecurity.model.Role;
 import makarov.springsecurity.model.User;
+import makarov.springsecurity.service.RoleService;
 import makarov.springsecurity.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,19 +10,18 @@ import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api")
 public class AdminController {
     private final UserService userService;
-    private final RoleRepository roleRepository;
+    private final RoleService roleService;
 
-    public AdminController(UserService userService, RoleRepository roleRepository) {
+    public AdminController(UserService userService, RoleService roleService) {
         this.userService = userService;
-        this.roleRepository = roleRepository;
-
+        this.roleService = roleService;
     }
 
     @GetMapping("/users")
@@ -33,8 +30,8 @@ public class AdminController {
     }
 
     @GetMapping("/users/roles")
-    public ResponseEntity<Collection<Role>> getAllRoles() {
-        return new ResponseEntity<>(roleRepository.findAll(), HttpStatus.OK);
+    public ResponseEntity<Set<Role>> getAllRoles() {
+        return new ResponseEntity<>(roleService.getAllRoles(), HttpStatus.OK);
     }
 
     @GetMapping("/users/{id}")
@@ -43,15 +40,15 @@ public class AdminController {
     }
 
     @PostMapping("/users")
-    public UserDTO addNewUser(@RequestBody UserDTO userDTO) {
-        userService.saveOrUpdateUser(userDTO);
-        return userDTO;
+    public User addNewUser(@RequestBody User user) {
+        userService.saveOrUpdateUser(user);
+        return user;
     }
 
     @PutMapping("/users")
-    public UserDTO editUser(@RequestBody UserDTO userDTO) {
-        userService.saveOrUpdateUser(userDTO);
-        return userDTO;
+    public User editUser(@RequestBody User user) {
+        userService.saveOrUpdateUser(user);
+        return user;
     }
 
     @DeleteMapping("/users/{id}")
